@@ -7,14 +7,9 @@ import sys
 
 def get_options():
     usage = """
-    Create EBS-backed AMI from a disk image. The process begins by starting an
-    instance creating an EBS volume and attaching it. The disk image is then
-    dd'ed to the EBS volume on the instance over ssh. That volume is snapshoted
-    and then registered as a new AMI. This script is threaded; one thread for
-    each region we want to upload to. Usually, image file names are of the form:
-    Fedora-Release-VariantName-Arch.raw
+    Removes old AMIs that are no longer needed.
 
-    Usage: %prog [options] path-to-image"""
+    Usage: %prog [options] AMI ID"""
     parser = OptionParser(usage=usage)
     parser.add_option('-t', '--time', help='Timeframe to remove?',
         default=False, action='store_true')

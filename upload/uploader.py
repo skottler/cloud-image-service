@@ -20,17 +20,6 @@ import fedora_ec2
 # Constants
 #
 
-# we assume whatever account we're using has access to the same set of AMIs
-# these are used to figure out what we should instance and use as a stage
-amis = {
-    'us-east-1':      'ami-ec0efa85',
-    'us-west-1':      'ami-420d5d07',
-    'us-west-2':      'ami-a6810c96',
-    'eu-west-1':      'ami-9e3401ea',
-    'ap-southeast-1': 'ami-3e06786c',
-    'ap-northeast-1': 'ami-e80ea5e9',
-    'sa-east-1':      'ami-3038e72d'
-}
 results = {}
 result_lock = threading.Lock()
 mainlog = None
@@ -245,7 +234,7 @@ if __name__ == '__main__':
     mainlog.info('\n'.join(['%s : %s' % (k, v) for k, v in results.items()]))
 
     #This is to broadcast new AMI's
-    #import fedmsg
-    #for k,v in results.items():
-    #    fedmsg.publish(topic='EC2-Uploader', modname='EC2', msg={'%s  : %s' % (k,v)})
+    import fedmsg
+    for k,v in results.items():
+        fedmsg.publish(topic='', modname='', msg={'%s  : %s' % (k,v)})
 

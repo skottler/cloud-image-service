@@ -28,7 +28,9 @@ cp fedmsg/fedmsg_check.sh upload/uploader.conf upload/boto.cfg /etc/
 if [ ! -d "/usr/lib/python2.7/site-packages/uploading_scripts" ]; then
     mkdir /usr/lib/python2.7/site-packages/uploading_scripts
 fi
-cp upload/fedora_ec2.py upload/uploader.py README.txt  /usr/lib/python2.7/site-packages/uploading_scripts/
+cp upload/fedora_ec2.py README.txt  /usr/lib/python2.7/site-packages/uploading_scripts/
+
+cp upload/uploader.py /bin/
 
 #Moves systemd in
 cp fedmsgd/* /lib/systemd/system/

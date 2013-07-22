@@ -6,6 +6,8 @@ import os
 import shutil
 import sys
 
+mod = 'cloud-image-uploader'
+
 def main(message):
     
     location = get_image(message)
@@ -14,19 +16,16 @@ def main(message):
     if location.endswith('.qcow2'):
         newLocation = location[:6] + '.raw'
         os.system('qemu-img convert %s %s' % (location, (newLocation)))
-        #Compress image?
-        #os.system('xz -k %s' % (newLocation)) #Remove -k if do not want to keep original .raw
+        topic = 'image.qcow2.complete'
     else:
         newLocation = location
-    #Upload to EC2
-    os.system('uploader.py %s' % (newLocation))
-    #fedmsg is inside uploader.py so no need to broadcast here
+        topic = 'image.rawxz.complete'
+    if message['topic'] == 'fedoraproject.org.prod.SOMETHING':
+        #Upload to EC2
+        os.system('uploader.py %s' % (newLocation))
+        #fedmsg is inside uploader.py so no need to broadcast here
 
-    #Compress image
-    os.system('xz -k %s' % (newLocation)) #Remove -k if do not want to keep original .raw
-
-    copy_image(newLocation)
-    #Move to http://alt.fedoraproject.org/pub/alt/cloud
+    move_image(newLocation, topic)
 
 def get_image(message):
     #The message should have a koji task ID, from that we can get some data
@@ -37,12 +36,12 @@ def get_image(message):
     location = 0
     return location
 
-def copy_image(location):
+def move_image(location, top):
     #Copy file(s) to right location
-    #TODO: Get correct location/credentials.
-    """shutil.copy(newLocation, '/pub/alt/stage/19-TC2/Images/%s' % arch)"""
+    moveLocation = '/mnt/alt.fedoraproject.org/pub/alt/cloud'
+    shutil.move(location, moveLocation)
     #fedmsg tells that this exists
-    fedmsg.publish(topic='', modname='', msg={os.path.basename(newLocation):'/pub/alt/stage/19-TC2/Images/%s' % (task['arch'])})
+    fedmsg.publish(topic=top, modname=mod, msg={os.path.basename(location): moveLocation})
 
 def update_site(location):
     """Have to work on this"""

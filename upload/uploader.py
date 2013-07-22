@@ -236,5 +236,5 @@ if __name__ == '__main__':
     #This is to broadcast new AMI's
     import fedmsg
     for k,v in results.items():
-        fedmsg.publish(topic='', modname='', msg={'%s  : %s' % (k,v)})
+        fedmsg.publish(topic='image.ec2.complete', modname='cloud-image-uploader', msg={'%s  : %s' % (k,v)})
 

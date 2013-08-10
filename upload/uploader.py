@@ -2,6 +2,7 @@
 # Upload images to EBS volumes in EC2 in all regions
 # Authors: Jay Greguske <jgregusk@redhat.com>,
 #          Andrew Thomas <anthomas@redhat.com>
+#          Sam Kottler <shk@redhat.com>
 #
 
 import logging
@@ -12,7 +13,6 @@ import os
 import subprocess
 import sys
 import threading
-import time
 
 import fedora_ec2
 
@@ -45,7 +45,7 @@ def get_options():
     parser.add_option('-c', '--config', help='Add a config file',
         default=['/etc/uploader.conf'], action='append')
     parser.add_option('-e', '--description', default=None,
-        help='Give a description of this image'), 
+        help='Give a description of this image'),
     parser.add_option('-k', '--keep', help='Keep tmp instance/volumes around',
         action='store_true', default=False)
     parser.add_option('-n', '--name', default=False,
@@ -78,7 +78,13 @@ def get_options():
     m = fedora_ec2.check_name(opts.name)
     if not m:
         parser.error(fedora_ec2.format_error)
-    if m.group('arch') not in ('i386', 'x86_64'):
+
+    if m.group('arch') not in (
+        'i386',
+        'x86_64'
+        'sparc',
+        's390'
+    ):
         parser.error('The arch must be i386 or x86_64')
     opts.matcher = m
     return opts, image
@@ -95,7 +101,7 @@ def setup_log():
     if os.path.exists(os.path.join(logdir, logname + '.log')):
         os.remove(os.path.join(logdir, logname + '.log'))
     mainlog = logging.getLogger(logname)
-    if get_opt('debug') == 'True': 
+    if get_opt('debug') == 'True':
         mainlog.setLevel(logging.DEBUG)
     else:
         mainlog.setLevel(logging.INFO)
@@ -118,7 +124,7 @@ def parse_config():
         opts.regions = config.sections()
     # XXX: global mutator
     opts.config = config
- 
+
 def get_opt(name, region='DEFAULT'):
     """
     Return a region specific option, if it is defined, otherwise take the
@@ -178,7 +184,7 @@ def upload_region(region, image_path):
     ec2.wait_ssh(inst_info, path=get_opt('sshpath', region))
     mainlog.info('[%s] uploading image %s to EBS volume %s' %
         (ec2.region, image_path, ebs_vol_info['device']))
-    run_cmd('dd if=%s bs=4096 | ssh %s -C root@%s "dd of=%s bs=4096"' % 
+    run_cmd('dd if=%s bs=4096 | ssh %s -C root@%s "dd of=%s bs=4096"' %
         (image_path, ec2.get_ssh_opts(path=get_opt('sshpath', region)), inst_info['dns_name'],
         ebs_vol_info['device']))
 
@@ -223,7 +229,7 @@ if __name__ == '__main__':
 
     for region in opts.regions:
         mainlog.info('spawning thread for %s' % region)
-        threads.append(threading.Thread(target=upload_region, 
+        threads.append(threading.Thread(target=upload_region,
             args=(region, ipath), name=region))
 
     for t in threads:

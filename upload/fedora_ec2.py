@@ -1,13 +1,13 @@
 #!/usr/bin/python -tt
 # A library for accessing and working with EC2.
 # Authors: Jay Greguske  <jgregusk@redhat.com>,
-#          Andrew Thomas <anthomas@redhat.com>
+#          Andrew Thomas <anthomas@redhat.com>,
+#          Sam Kottler <shk@redhat.com>
 #
 
 import logging
 import os
 import re
-from socket import gethostname
 import subprocess
 import sys
 import time
@@ -55,12 +55,12 @@ class EC2Obj(object):
     An object that encapsulates useful information that is specific to RCM's
     EC2 infrastructure and environments. Provides many methods to interact
     with EC2 in a standarized way.
-    """    
+    """
     _instances = 1
     _devs = {}
     _devs.update([('/dev/sd' + chr(i), None) for i in range(104, 111)])
 
-    def __init__(self, region='US', cred=None, quiet=False, logfile=None, 
+    def __init__(self, region='US', cred=None, quiet=False, logfile=None,
                  debug=False):
         """
         Constructor; useful options to the object are interpreted here.
@@ -87,7 +87,7 @@ class EC2Obj(object):
         if os.path.exists(os.path.join(logdir,logname+'.log')):
             os.remove(os.path.join(logdir,logname+'.log'))
         self.logger = logging.getLogger(logname)
-        if debug == 'True': 
+        if debug == 'True':
             self.logger.setLevel(logging.DEBUG)
         else:
             self.logger.setLevel(logging.INFO)
@@ -119,7 +119,7 @@ class EC2Obj(object):
 
     def alias_region(self, reg):
         """
-        EC2 tools are not consistent about region labels, so we try to be 
+        EC2 tools are not consistent about region labels, so we try to be
         friendly about that here.
         """
         region = reg
@@ -151,11 +151,11 @@ class EC2Obj(object):
         owner - account number of the owner
         status - AMI status, normally 'available'
         visibility - 'public' or 'private'
-        product - products codes associated with it 
+        product - products codes associated with it
         arch - i386 or x86_64
         type - type of image ('machine', 'kernel', 'ramdisk')
         aki - the AKI ID
-        ari - the ARI ID 
+        ari - the ARI ID
         snapid - snapshot id of of the EBS volume it was registered from
         """
         if not ami_id.startswith('ami-'):
@@ -179,10 +179,10 @@ class EC2Obj(object):
                   group=None, keypair=None, disk=True):
         """
         Start the designated AMI. This function does not guarantee success. See
-        inst_info to verify an instance started successfully. 
+        inst_info to verify an instance started successfully.
         Optionally takes a few keyword arguments:
             - wait: True if we should wait until the instance is running
-            - aki: the AKI id to start with. None will boot it with the 
+            - aki: the AKI id to start with. None will boot it with the
                    default it was bundled with.
             - ari: the ARI id to start with
             - zone: the availability zone to start in
@@ -196,7 +196,7 @@ class EC2Obj(object):
         if group == None:
             group = self.def_group
         if keypair == None:
-            self.logger.warning('No keypair') 
+            self.logger.warning('No keypair')
         if ami_info['architecture'] == 'i386':
             size = 'm1.small'
         elif ami_info['architecture'] == 'x86_64':
@@ -230,7 +230,7 @@ class EC2Obj(object):
             type - the instance type string such as m1.large
             zone - availability zone
             aki - the AKI ID it is booting with
-            ari - the ARI ID it is booting with 
+            ari - the ARI ID it is booting with
             time - the time the instance was started
             url - the url/hostname of the instance
             address - the IP address
@@ -256,9 +256,9 @@ class EC2Obj(object):
 
     def wait_inst_status(self, instance, status, tries=0, interval=20):
         """
-        Wait until an instance has the desired status. Optional arguments 
-        tries and interval set how many tries and how long to wait between 
-        polls respectively. Will throw an error if the status is ever 
+        Wait until an instance has the desired status. Optional arguments
+        tries and interval set how many tries and how long to wait between
+        polls respectively. Will throw an error if the status is ever
         terminated, unless that is the desired status. Setting tries to 0 means
         to try forever. Returns a dictionary describing the instance, see
         inst_info().
@@ -293,12 +293,12 @@ class EC2Obj(object):
         if self._att_devs.get(inst_id) == None:
             self._att_devs[inst_id] = EC2Obj._devs.copy()
         try:
-            dev = [d for d in self._att_devs[inst_id].keys() 
+            dev = [d for d in self._att_devs[inst_id].keys()
                 if self._att_devs[inst_id][d] == None].pop()
         except IndexError:
             self._log_error('No free device names left for %s' % inst_id)
         self._att_devs[inst_id][dev] = vol_id
-        self.logger.debug('taking %s to attach %s to %s' % 
+        self.logger.debug('taking %s to attach %s to %s' %
             (dev, vol_id, inst_id))
         return dev
 
@@ -325,7 +325,7 @@ class EC2Obj(object):
         Create an EBS volume of the given size in region/zone. If size == 0,
         do not explicitly set a size; this may be useful with "snap", which
         creates a volume from a snapshot ID.
-        
+
         This function does not guarantee success, you should check with
         vol_available() to ensure it was created successfully. If wait is set
         to True, we will wait for the volume to be available before returning;
@@ -345,7 +345,7 @@ class EC2Obj(object):
 
     def attach_vol(self, inst_id, vol_id, wait=False, dev=None):
         """
-        Attach an EBS volume to an AMI id in region. This is not an immediate 
+        Attach an EBS volume to an AMI id in region. This is not an immediate
         action, you should check the status of the volume (see vol_info) if
         you wish to do somethiFng more with it after attaching. Setting wait to
         True cause the method to wait until the volume is attached before
@@ -422,9 +422,9 @@ class EC2Obj(object):
 
     def wait_vol_status(self, vol_id, status, tries=0, interval=20):
         """
-        Wait until a volume has the desired status. Optional arguments tries 
-        and interval set how many tries and how long to wait between polls 
-        respectively. Will throw a RuntimeError if the status is ever 
+        Wait until a volume has the desired status. Optional arguments tries
+        and interval set how many tries and how long to wait between polls
+        respectively. Will throw a RuntimeError if the status is ever
         'deleting', unless that is the desired status. Setting tries to 0 means
         to try forever. Returns a dictionary describing the volume, see
         vol_info().
@@ -450,9 +450,9 @@ class EC2Obj(object):
 
     def wait_vol_attach_status(self, vol_id, status, tries=0, interval=10):
         """
-        Wait until a volume has the desired status. Optional arguments tries 
-        and interval set how many tries and how long to wait between polls 
-        respectively. Setting tries to 0 means to try forever. Returns a 
+        Wait until a volume has the desired status. Optional arguments tries
+        and interval set how many tries and how long to wait between polls
+        respectively. Setting tries to 0 means to try forever. Returns a
         dictionary describing the volume, see vol_info().
         """
         vol = self.conn.get_all_volumes([vol_id])[0]
@@ -478,7 +478,7 @@ class EC2Obj(object):
     def take_snap(self, vol_id, wait=False):
         """
         Snapshot a detached volume, returns the snapshot ID. If wait is set to
-        True, return once the snapshot is created. Returns a dictionary 
+        True, return once the snapshot is created. Returns a dictionary
         that describes the snapshot.
         """
         vol = self.conn.get_all_volumes([vol_id])[0]
@@ -541,9 +541,9 @@ class EC2Obj(object):
         ebs = EBSBlockDeviceType()
         ebs.snapshot_id = snap_id
         block_map = BlockDeviceMapping()
- 
+
         if aki == None:
-            raise Fedora_EC2Error('Need to specify an AKI')  
+            raise Fedora_EC2Error('Need to specify an AKI')
         if disk:
             disk = '/dev/sda=%s' % snap_id
             root = '/dev/sda'
@@ -553,7 +553,7 @@ class EC2Obj(object):
         block_map[root] = ebs
 
         ami_id = self.conn.register_image(name=name, description=desc,
-              image_location = '', architecture=arch, kernel_id=aki, 
+              image_location = '', architecture=arch, kernel_id=aki,
               ramdisk_id=ari,root_device_name=root, block_device_map=block_map)
 
         if not ami_id.startswith('ami-'):
@@ -567,7 +567,6 @@ class EC2Obj(object):
         Delete an EBS volume snapshot. Returns the ID of the snapshot that was
         deleted.
         """
-        del_snap = self.conn.delete_snapshot(snap_id)
         self.logger.info('Deleted a snapshot: %s' % snap_id)
         return snap_id
 
@@ -585,7 +584,7 @@ class EC2Obj(object):
     def kill_inst(self, inst_id, wait=False):
         """
         USE WITH CAUTION!
-        
+
         Kill a running instance. Returns a dictionary describing the instance,
         see inst_info for more information. Setting wait=True means we will not
         return until the instance is terminated.
@@ -603,7 +602,7 @@ class EC2Obj(object):
         Make an AMI publicly launchable. Should be used for Hourly images only!
         """
         self.conn.modify_image_attribute(ami, attribute='launchPermission',
-            operation='add', user_ids=None, groups=['all']) 
+            operation='add', user_ids=None, groups=['all'])
         self.logger.info('%s is now public!' % ami)
 
     def get_my_insts(self):
@@ -633,11 +632,11 @@ class EC2Obj(object):
         The snapid field may contain a list of snapshots in the blockmapping
         for an image. It does not take just the first one.
         """
-        image_list = self.conn.get_all_images(owners='self')       
+        image_list = self.conn.get_all_images(owners='self')
 
         mine = []
         info = {'snapid': []}
-        for image in image_list: 
+        for image in image_list:
             info = image.__dict__
             if info.get('id') != None and info.get('id').startswith('ami-'):
                 # we don't want AKIs or ARIs
@@ -704,7 +703,7 @@ class EC2Obj(object):
             else:
                 raise Fedora_EC2Error('Key path does not exist')
         else:
-            raise Fedora_EC2Error('No path specified') 
+            raise Fedora_EC2Error('No path specified')
         ssh_opts = '-i %s ' % kp + \
                    '-o "StrictHostKeyChecking no" ' + \
                    '-o "PreferredAuthentications publickey"'
